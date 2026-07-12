@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#b72a22">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Наборы роллов">
+  <title>Наборы роллов</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="icon-button back-button" id="backButton" type="button" aria-label="Назад" hidden>
+        <span aria-hidden="true">‹</span>
+      </button>
+      <div class="title-block">
+        <p class="section-label" id="sectionLabel">Каталог</p>
+        <h1 id="screenTitle">Наборы роллов</h1>
+      </div>
+      <img class="brand-mark" src="assets/roll-mark.svg" alt="">
+    </header>
+
+    <main>
+      <section class="search-panel" id="searchPanel">
+        <label class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="Найти набор или ролл" autocomplete="off">
+        </label>
+        <div class="summary-strip">
+          <span id="setsCount">0 наборов</span>
+          <span id="recipesCount">0 составов</span>
+        </div>
+      </section>
+
+      <section class="content-list" id="content" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <template id="setCardTemplate">
+    <article class="set-card">
+      <button class="set-open" type="button">
+        <span>
+          <strong class="set-name"></strong>
+          <small class="set-meta"></small>
+        </span>
+        <span class="chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="roll-preview"></div>
+    </article>
+  </template>
+
+  <template id="rollPillTemplate">
+    <button class="roll-pill" type="button">
+      <span class="roll-name"></span>
+      <b class="roll-quantity"></b>
+    </button>
+  </template>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
