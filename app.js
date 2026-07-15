@@ -27,6 +27,34 @@ function recipeFor(rollName) {
     || state.recipes.find((recipe) => key.includes(normalize(recipe.name)) || normalize(recipe.name).includes(key));
 }
 
+function parseIngredient(rawIngredient) {
+  const sectionMatch = rawIngredient.match(/^(Обвалка|Украшение):\s*(.+)$/);
+  const section = sectionMatch ? sectionMatch[1] : "Состав";
+  const text = sectionMatch ? sectionMatch[2] : rawIngredient;
+  const amountMatch = text.match(/^(.*\S)\s+(\d+(?:,\d+)?)$/);
+
+  return {
+    section,
+    name: amountMatch ? amountMatch[1] : text,
+    amount: amountMatch ? amountMatch[2] : ""
+  };
+}
+
+function groupedIngredients(recipe) {
+  const groups = {
+    "Состав": [],
+    "Обвалка": [],
+    "Украшение": []
+  };
+
+  for (const ingredient of recipe.ingredients) {
+    const row = parseIngredient(ingredient);
+    groups[row.section].push(row);
+  }
+
+  return groups;
+}
+
 function makeRollButton(roll) {
   const template = document.querySelector("#rollPillTemplate").content.cloneNode(true);
   const button = template.querySelector(".roll-pill");
@@ -102,29 +130,68 @@ function renderRecipe(roll) {
 
   const card = document.createElement("article");
   card.className = "recipe-card";
-  const meta = [
-    recipe.category,
-    recipe.output ? `Выход ${recipe.output} г` : "",
-    `стр. ${recipe.page}`
-  ].filter(Boolean);
   card.innerHTML = `
-    <h2></h2>
-    <div class="recipe-meta"></div>
-    <ul class="ingredient-list"></ul>
+    <header class="recipe-title"></header>
+    <div class="recipe-layout">
+      <aside class="recipe-visual" aria-hidden="true">
+        <img src="assets/roll-mark.svg" alt="">
+        <div class="recipe-stamp"></div>
+      </aside>
+      <div class="recipe-tables"></div>
+    </div>
   `;
-  card.querySelector("h2").textContent = recipe.name;
-  const metaBox = card.querySelector(".recipe-meta");
-  for (const item of meta) {
-    const span = document.createElement("span");
-    span.textContent = item;
-    metaBox.append(span);
+  card.querySelector(".recipe-title").textContent = recipe.name;
+  card.querySelector(".recipe-stamp").textContent = recipe.category;
+
+  const tables = card.querySelector(".recipe-tables");
+  const groups = groupedIngredients(recipe);
+  for (const sectionName of ["Состав", "Обвалка", "Украшение"]) {
+    const rows = groups[sectionName];
+    if (!rows.length) continue;
+
+    const table = document.createElement("table");
+    table.className = "recipe-table";
+    table.innerHTML = `
+      <thead>
+        <tr><th colspan="2"></th></tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    table.querySelector("th").textContent = sectionName;
+    const tbody = table.querySelector("tbody");
+
+    for (const row of rows) {
+      const tr = document.createElement("tr");
+      const name = document.createElement("td");
+      const amount = document.createElement("td");
+      name.textContent = row.name;
+      amount.textContent = row.amount;
+      tr.append(name, amount);
+      tbody.append(tr);
+    }
+    tables.append(table);
   }
-  const list = card.querySelector(".ingredient-list");
-  for (const ingredient of recipe.ingredients) {
-    const li = document.createElement("li");
-    li.textContent = ingredient;
-    list.append(li);
+
+  const outputTable = document.createElement("table");
+  outputTable.className = "recipe-table output-table";
+  outputTable.innerHTML = `
+    <tbody>
+      <tr>
+        <td>Выход</td>
+        <td></td>
+      </tr>
+    </tbody>
+  `;
+  outputTable.querySelector("td:last-child").textContent = recipe.output || "-";
+  tables.append(outputTable);
+
+  if (recipe.page) {
+    const source = document.createElement("p");
+    source.className = "recipe-source";
+    source.textContent = `Источник: ${recipe.category}, стр. ${recipe.page}`;
+    tables.append(source);
   }
+
   content.append(card);
 }
 
