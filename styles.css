@@ -294,6 +294,16 @@ h1 {
   min-width: 0;
 }
 
+.recipe-warning {
+  padding: 11px 12px;
+  border-bottom: 2px solid #111;
+  background: #fff2b8;
+  color: #111;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
 .recipe-table {
   width: 100%;
   border-collapse: collapse;

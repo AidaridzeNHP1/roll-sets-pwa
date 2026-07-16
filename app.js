@@ -21,10 +21,38 @@ const normalize = (value) => String(value)
   .replace(/\s+/g, " ")
   .trim();
 
+const recipeAliases = {
+  "запеченная филадельфия с л и к": "Запеченная Филадельфия с лососем и крабом",
+  "запеченная филадельфия с лососем": "Запеченная Филадельфия с лососем",
+  "запеченная филадельфия с лососем и крабом": "Запеченная Филадельфия с лососем и крабом",
+  "запеченный с жаренным лососем": "Запеченный с жаренным лососем",
+  "запеченный с крабом": "Запеченный с крабом",
+  "запеченный с курицей": "Запеченный с курицей",
+  "запеченный с лососем": "Запеченный с лососем",
+  "запеченный с лососем и спайси": "Запеченный с лососем спайси",
+  "манхэттен": "Манхеттен",
+  "филадельфия роял": "Филадельфия «РОЯЛ»",
+  "запеченный с креветкой": "Запеченный с креветкой",
+  "лава краб спайси": "Лава Краб Спайс",
+  "том ям": "Том Ям Ролл"
+};
+
+const recipeWarnings = {
+  "краб терияки": "Нужно уточнить: в рецептах есть два похожих варианта — «Краб Терияки Нью» и «Сочный Краб Терияки». Сейчас показан первый найденный вариант."
+};
+
 function recipeFor(rollName) {
   const key = normalize(rollName);
+  const alias = recipeAliases[key];
+  if (alias) {
+    return state.recipes.find((recipe) => normalize(recipe.name) === normalize(alias)) || null;
+  }
   return state.recipes.find((recipe) => normalize(recipe.name) === key)
     || state.recipes.find((recipe) => key.includes(normalize(recipe.name)) || normalize(recipe.name).includes(key));
+}
+
+function warningFor(rollName) {
+  return recipeWarnings[normalize(rollName)] || "";
 }
 
 function parseIngredient(rawIngredient) {
@@ -144,6 +172,14 @@ function renderRecipe(roll) {
   card.querySelector(".recipe-stamp").textContent = recipe.category;
 
   const tables = card.querySelector(".recipe-tables");
+  const warning = warningFor(roll[0]);
+  if (warning) {
+    const warningBox = document.createElement("div");
+    warningBox.className = "recipe-warning";
+    warningBox.textContent = warning;
+    tables.append(warningBox);
+  }
+
   const groups = groupedIngredients(recipe);
   for (const sectionName of ["Состав", "Обвалка", "Украшение"]) {
     const rows = groups[sectionName];

@@ -1,4 +1,4 @@
-const CACHE_NAME = "roll-sets-pwa-v3";
+const CACHE_NAME = "roll-sets-pwa-v4";
 const APP_FILES = [
   "./",
   "./index.html",
