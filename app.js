@@ -1,8 +1,9 @@
 const state = {
   sets: [],
   recipes: [],
-  route: { name: "home" },
-  query: ""
+  route: { name: "sets" },
+  query: "",
+  tab: "sets"
 };
 
 const content = document.querySelector("#content");
@@ -14,10 +15,14 @@ const sectionLabel = document.querySelector("#sectionLabel");
 const setsCount = document.querySelector("#setsCount");
 const recipesCount = document.querySelector("#recipesCount");
 
+const categoryOrder = ["Запеченные", "Холодные", "Темпура", "Поке", "Суши-тако", "Ёнигири"];
+const rollTabCategories = ["Запеченные", "Холодные", "Темпура"];
+
 const normalize = (value) => String(value)
   .toLowerCase()
   .replaceAll("ё", "е")
   .replaceAll("big", "биг")
+  .replace(/[«»"]/g, "")
   .replace(/\s+/g, " ")
   .trim();
 
@@ -37,18 +42,47 @@ const recipeAliases = {
   "том ям": "Том Ям Ролл"
 };
 
-const recipeWarnings = {
-  "краб терияки": "Нужно уточнить: в рецептах есть два похожих варианта — «Краб Терияки Нью» и «Сочный Краб Терияки». Сейчас показан первый найденный вариант."
+const multiRecipeAliases = {
+  "краб терияки": ["Краб Терияки Нью", "Сочный Краб Терияки"]
 };
 
-function recipeFor(rollName) {
+const recipeWarnings = {
+  "краб терияки": "Нужно уточнить: в рецептах есть два похожих варианта. Пока показаны оба рецепта."
+};
+
+function categoryRank(category) {
+  const index = categoryOrder.findIndex((item) => normalize(item) === normalize(category));
+  return index === -1 ? categoryOrder.length : index;
+}
+
+function recipeMatchesFor(rollName) {
   const key = normalize(rollName);
+  const multi = multiRecipeAliases[key];
+  if (multi) {
+    return multi
+      .map((name) => state.recipes.find((recipe) => normalize(recipe.name) === normalize(name)))
+      .filter(Boolean);
+  }
+
   const alias = recipeAliases[key];
   if (alias) {
-    return state.recipes.find((recipe) => normalize(recipe.name) === normalize(alias)) || null;
+    const recipe = state.recipes.find((item) => normalize(item.name) === normalize(alias));
+    return recipe ? [recipe] : [];
   }
-  return state.recipes.find((recipe) => normalize(recipe.name) === key)
-    || state.recipes.find((recipe) => key.includes(normalize(recipe.name)) || normalize(recipe.name).includes(key));
+
+  const exact = state.recipes.find((recipe) => normalize(recipe.name) === key);
+  if (exact) return [exact];
+
+  const fuzzy = state.recipes.filter((recipe) => {
+    const recipeName = normalize(recipe.name);
+    return key.includes(recipeName) || recipeName.includes(key);
+  });
+
+  return fuzzy.length ? [fuzzy[0]] : [];
+}
+
+function primaryRecipeFor(rollName) {
+  return recipeMatchesFor(rollName)[0] || null;
 }
 
 function warningFor(rollName) {
@@ -75,7 +109,7 @@ function groupedIngredients(recipe) {
     "Украшение": []
   };
 
-  for (const ingredient of recipe.ingredients) {
+  for (const ingredient of recipe.ingredients || []) {
     const row = parseIngredient(ingredient);
     groups[row.section].push(row);
   }
@@ -83,21 +117,62 @@ function groupedIngredients(recipe) {
   return groups;
 }
 
-function makeRollButton(roll) {
-  const template = document.querySelector("#rollPillTemplate").content.cloneNode(true);
-  const button = template.querySelector(".roll-pill");
-  template.querySelector(".roll-name").textContent = roll[0];
-  template.querySelector(".roll-quantity").textContent = roll[1];
-  button.addEventListener("click", () => navigate({ name: "recipe", roll }));
+function ensureTabs() {
+  if (document.querySelector("#mainTabs")) return;
+  const tabs = document.createElement("div");
+  tabs.className = "main-tabs";
+  tabs.id = "mainTabs";
+  tabs.innerHTML = `
+    <button class="main-tab" type="button" data-tab="sets">Сеты</button>
+    <button class="main-tab" type="button" data-tab="rolls">Роллы</button>
+  `;
+  searchPanel.prepend(tabs);
+  tabs.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-tab]");
+    if (!button) return;
+    state.tab = button.dataset.tab;
+    state.route = { name: state.tab };
+    state.query = "";
+    searchInput.value = "";
+    history.pushState(state.route, "", `#${state.tab}`);
+    render();
+  });
+}
+
+function updateTabs() {
+  document.querySelectorAll(".main-tab").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.tab === state.tab);
+  });
+}
+
+function makeRollChip(roll) {
+  const chip = document.createElement("span");
+  chip.className = "roll-chip";
+  chip.innerHTML = `<span></span><b></b>`;
+  chip.querySelector("span").textContent = roll[0];
+  chip.querySelector("b").textContent = roll[1];
+  return chip;
+}
+
+function makeSetCard(set) {
+  const template = document.querySelector("#setCardTemplate").content.cloneNode(true);
+  template.querySelector(".set-name").textContent = set.name;
+  template.querySelector(".set-meta").textContent = `${set.output} · ${set.items.length} поз.`;
+  template.querySelector(".set-open").addEventListener("click", () => navigate({ name: "set", set }));
+  const preview = template.querySelector(".roll-preview");
+  for (const roll of set.items.slice(0, 6)) preview.append(makeRollChip(roll));
   return template;
 }
 
-function renderHome() {
+function renderSetsTab() {
   content.className = "content-list";
   searchPanel.hidden = false;
   backButton.hidden = true;
-  sectionLabel.textContent = "Каталог";
-  screenTitle.textContent = "Наборы роллов";
+  state.tab = "sets";
+  sectionLabel.textContent = "Сеты";
+  screenTitle.textContent = "Сеты";
+  searchInput.placeholder = "Найти сет или ролл";
+  updateTabs();
 
   const query = normalize(state.query);
   const sets = query
@@ -107,26 +182,28 @@ function renderHome() {
   content.replaceChildren();
 
   if (!sets.length) {
-    content.append(emptyState("Ничего не найдено", "Попробуйте другое название набора или ролла."));
+    content.append(emptyState("Ничего не найдено", "Попробуйте другое название сета или ролла."));
     return;
   }
 
-  for (const set of sets) {
-    const template = document.querySelector("#setCardTemplate").content.cloneNode(true);
-    template.querySelector(".set-name").textContent = set.name;
-    template.querySelector(".set-meta").textContent = `${set.output} · ${set.items.length} поз.`;
-    template.querySelector(".set-open").addEventListener("click", () => navigate({ name: "set", set }));
-    const preview = template.querySelector(".roll-preview");
-    for (const roll of set.items.slice(0, 6)) preview.append(makeRollButton(roll));
-    content.append(template);
-  }
+  for (const set of sets) content.append(makeSetCard(set));
+}
+
+function setRollsInRecipeOrder(set) {
+  return [...set.items].sort((a, b) => {
+    const recipeA = primaryRecipeFor(a[0]);
+    const recipeB = primaryRecipeFor(b[0]);
+    const rankDiff = categoryRank(recipeA?.category || "") - categoryRank(recipeB?.category || "");
+    if (rankDiff !== 0) return rankDiff;
+    return normalize(a[0]).localeCompare(normalize(b[0]));
+  });
 }
 
 function renderSet(set) {
   content.className = "content-list detail-mode";
   searchPanel.hidden = true;
   backButton.hidden = false;
-  sectionLabel.textContent = "Набор";
+  sectionLabel.textContent = "Сет";
   screenTitle.textContent = set.name;
 
   const head = document.createElement("article");
@@ -136,26 +213,87 @@ function renderSet(set) {
   head.querySelector("p").textContent = `${set.output} · ${set.items.length} позиций`;
 
   const list = document.createElement("section");
-  list.className = "roll-list";
-  for (const roll of set.items) list.append(makeRollButton(roll));
+  list.className = "recipe-stack";
+  for (const roll of setRollsInRecipeOrder(set)) list.append(makeRollRecipePanel(roll[0], roll[1]));
 
   content.replaceChildren(head, list);
 }
 
-function renderRecipe(roll) {
-  const recipe = recipeFor(roll[0]);
+function renderRollsTab() {
   content.className = "content-list detail-mode";
-  searchPanel.hidden = true;
-  backButton.hidden = false;
-  sectionLabel.textContent = "Состав";
-  screenTitle.textContent = recipe?.name || roll[0];
+  searchPanel.hidden = false;
+  backButton.hidden = true;
+  state.tab = "rolls";
+  sectionLabel.textContent = "Роллы";
+  screenTitle.textContent = "Роллы";
+  searchInput.placeholder = "Найти ролл";
+  updateTabs();
   content.replaceChildren();
 
-  if (!recipe) {
-    content.append(emptyState("Состав не найден", `Для «${roll[0]}» нет точного совпадения в извлеченных ТТК. Его можно добавить в recipes.json.`));
-    return;
+  const query = normalize(state.query);
+  const mainSection = document.createElement("section");
+  mainSection.className = "catalog-section";
+  mainSection.innerHTML = `<h2>Роллы</h2>`;
+
+  for (const category of rollTabCategories) {
+    const recipes = state.recipes
+      .filter((recipe) => normalize(recipe.category) === normalize(category))
+      .filter((recipe) => !query || normalize(recipe.name).includes(query))
+      .sort((a, b) => normalize(a.name).localeCompare(normalize(b.name)));
+
+    if (!recipes.length && query) continue;
+
+    const group = document.createElement("section");
+    group.className = "category-section";
+    group.innerHTML = `<h3></h3>`;
+    group.querySelector("h3").textContent = category;
+    const stack = document.createElement("div");
+    stack.className = "recipe-stack";
+    for (const recipe of recipes) stack.append(makeRollRecipePanel(recipe.name, "1", [recipe]));
+    if (!recipes.length) stack.append(emptyState("Пока пусто", `В категории «${category}» пока нет рецептов.`));
+    group.append(stack);
+    mainSection.append(group);
   }
 
+  const futureSection = document.createElement("section");
+  futureSection.className = "catalog-section";
+  futureSection.innerHTML = `
+    <h2>Поке, суши-тако, ёнигири</h2>
+  `;
+  futureSection.append(emptyState("Пока пусто", "Рецепты для этого раздела можно добавить позже."));
+
+  content.append(mainSection, futureSection);
+}
+
+function makeRollRecipePanel(rollName, quantity = "1", forcedRecipes = null) {
+  const panel = document.createElement("article");
+  panel.className = "roll-recipe-panel";
+  const title = document.createElement("div");
+  title.className = "roll-panel-title";
+  title.innerHTML = `<span></span><b></b>`;
+  title.querySelector("span").textContent = rollName;
+  title.querySelector("b").textContent = quantity;
+  panel.append(title);
+
+  const warning = warningFor(rollName);
+  if (warning) {
+    const warningBox = document.createElement("div");
+    warningBox.className = "recipe-warning panel-warning";
+    warningBox.textContent = warning;
+    panel.append(warningBox);
+  }
+
+  const recipes = forcedRecipes || recipeMatchesFor(rollName);
+  if (!recipes.length) {
+    panel.append(emptyState("Состав не найден", `Для «${rollName}» нет точного совпадения в recipes.json.`));
+    return panel;
+  }
+
+  for (const recipe of recipes) panel.append(makeRecipeCard(recipe));
+  return panel;
+}
+
+function makeRecipeCard(recipe) {
   const card = document.createElement("article");
   card.className = "recipe-card";
   card.innerHTML = `
@@ -172,14 +310,6 @@ function renderRecipe(roll) {
   card.querySelector(".recipe-stamp").textContent = recipe.category;
 
   const tables = card.querySelector(".recipe-tables");
-  const warning = warningFor(roll[0]);
-  if (warning) {
-    const warningBox = document.createElement("div");
-    warningBox.className = "recipe-warning";
-    warningBox.textContent = warning;
-    tables.append(warningBox);
-  }
-
   const groups = groupedIngredients(recipe);
   for (const sectionName of ["Состав", "Обвалка", "Украшение"]) {
     const rows = groups[sectionName];
@@ -228,7 +358,7 @@ function renderRecipe(roll) {
     tables.append(source);
   }
 
-  content.append(card);
+  return card;
 }
 
 function emptyState(title, text) {
@@ -242,25 +372,26 @@ function emptyState(title, text) {
 
 function navigate(route) {
   state.route = route;
-  history.pushState(route, "", route.name === "home" ? "#" : `#${route.name}`);
+  history.pushState(route, "", route.name === "sets" ? "#sets" : `#${route.name}`);
   render();
 }
 
 function render() {
   if (state.route.name === "set") renderSet(state.route.set);
-  else if (state.route.name === "recipe") renderRecipe(state.route.roll);
-  else renderHome();
+  else if (state.route.name === "rolls") renderRollsTab();
+  else renderSetsTab();
 }
 
 async function init() {
+  ensureTabs();
   const [sets, recipes] = await Promise.all([
     fetch("sets.json").then((response) => response.json()),
     fetch("recipes.json").then((response) => response.json())
   ]);
   state.sets = sets;
   state.recipes = recipes;
-  setsCount.textContent = `${sets.length} наборов`;
-  recipesCount.textContent = `${recipes.length} составов`;
+  setsCount.textContent = `${sets.length} сетов`;
+  recipesCount.textContent = `${recipes.length} рецептов`;
   render();
 
   if ("serviceWorker" in navigator) {
@@ -270,14 +401,20 @@ async function init() {
 
 searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
-  state.route = { name: "home" };
-  renderHome();
+  if (state.route.name === "set") return;
+  state.route = { name: state.tab };
+  render();
 });
 
-backButton.addEventListener("click", () => history.back());
+backButton.addEventListener("click", () => {
+  state.route = { name: "sets" };
+  history.pushState(state.route, "", "#sets");
+  render();
+});
 
 window.addEventListener("popstate", () => {
-  state.route = { name: "home" };
+  state.route = { name: "sets" };
+  state.tab = "sets";
   render();
 });
 

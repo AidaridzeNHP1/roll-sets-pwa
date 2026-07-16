@@ -97,6 +97,32 @@ h1 {
   margin: 4px 0 14px;
 }
 
+.main-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow);
+}
+
+.main-tab {
+  min-height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.main-tab.is-active {
+  background: var(--red);
+  color: #fff;
+}
+
 .search-box {
   display: grid;
   grid-template-columns: 28px 1fr;
@@ -189,7 +215,8 @@ h1 {
   padding: 0 14px 14px;
 }
 
-.roll-pill {
+.roll-pill,
+.roll-chip {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -203,7 +230,12 @@ h1 {
   text-align: left;
 }
 
-.roll-name {
+.roll-chip {
+  cursor: default;
+}
+
+.roll-name,
+.roll-chip span {
   display: -webkit-box;
   overflow: hidden;
   -webkit-line-clamp: 2;
@@ -212,7 +244,8 @@ h1 {
   font-weight: 650;
 }
 
-.roll-quantity {
+.roll-quantity,
+.roll-chip b {
   min-width: 24px;
   padding: 3px 7px;
   border-radius: 999px;
@@ -243,6 +276,7 @@ h1 {
 .recipe-card {
   border-color: #161616;
   background: #fff;
+  box-shadow: none;
 }
 
 .recipe-title {
@@ -304,6 +338,11 @@ h1 {
   line-height: 1.25;
 }
 
+.panel-warning {
+  border: 2px solid #111;
+  border-bottom: 0;
+}
+
 .recipe-table {
   width: 100%;
   border-collapse: collapse;
@@ -357,6 +396,73 @@ h1 {
   color: #4f4f4f;
   font-size: 12px;
   font-weight: 700;
+}
+
+.recipe-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.roll-recipe-panel {
+  display: grid;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.roll-panel-title {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px solid #111;
+  border-bottom: 0;
+  background: #fff0ec;
+  color: #111;
+}
+
+.roll-panel-title span {
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.roll-panel-title b {
+  min-width: 34px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--red);
+  text-align: center;
+  font-size: 13px;
+}
+
+.catalog-section,
+.category-section {
+  display: grid;
+  gap: 12px;
+}
+
+.catalog-section > h2,
+.category-section > h3 {
+  margin: 6px 2px 0;
+  color: var(--ink);
+  line-height: 1.12;
+}
+
+.catalog-section > h2 {
+  font-size: 28px;
+  font-weight: 950;
+}
+
+.category-section > h3 {
+  padding: 8px 0 3px;
+  border-bottom: 2px solid var(--line);
+  font-size: 21px;
+  font-weight: 900;
 }
 
 .empty-state {
