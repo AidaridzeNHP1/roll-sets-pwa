@@ -156,6 +156,15 @@ function makeRollChip(roll) {
 
 function makeSetCard(set) {
   const template = document.querySelector("#setCardTemplate").content.cloneNode(true);
+  if (set.image) {
+    const media = document.createElement("div");
+    media.className = "set-media";
+    media.innerHTML = `<img alt="">`;
+    const image = media.querySelector("img");
+    image.src = set.image;
+    image.alt = set.name;
+    template.querySelector(".set-open").before(media);
+  }
   template.querySelector(".set-name").textContent = set.name;
   template.querySelector(".set-meta").textContent = `${set.output} · ${set.items.length} поз.`;
   template.querySelector(".set-open").addEventListener("click", () => navigate({ name: "set", set }));
@@ -211,6 +220,14 @@ function renderSet(set) {
   head.innerHTML = `<h2></h2><p></p>`;
   head.querySelector("h2").textContent = set.name;
   head.querySelector("p").textContent = `${set.output} · ${set.items.length} позиций`;
+
+  if (set.image) {
+    const image = document.createElement("img");
+    image.className = "detail-image";
+    image.src = set.image;
+    image.alt = set.name;
+    head.prepend(image);
+  }
 
   const list = document.createElement("section");
   list.className = "recipe-stack";
@@ -308,6 +325,9 @@ function makeRecipeCard(recipe) {
   `;
   card.querySelector(".recipe-title").textContent = recipe.name;
   card.querySelector(".recipe-stamp").textContent = recipe.category;
+  const recipeImage = card.querySelector(".recipe-visual img");
+  recipeImage.src = recipe.image || "assets/roll-mark.svg";
+  recipeImage.alt = recipe.image ? recipe.name : "";
 
   const tables = card.querySelector(".recipe-tables");
   const groups = groupedIngredients(recipe);

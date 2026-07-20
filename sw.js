@@ -1,4 +1,4 @@
-const CACHE_NAME = "roll-sets-pwa-v6";
+const CACHE_NAME = "roll-sets-pwa-v7";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -31,8 +31,9 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   const isDataFile = url.pathname.endsWith("sets.json") || url.pathname.endsWith("recipes.json");
+  const isImageFile = /\.(svg|png|jpe?g|webp)$/i.test(url.pathname);
 
-  if (isDataFile) {
+  if (isDataFile || isImageFile) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
