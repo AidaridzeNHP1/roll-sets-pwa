@@ -199,15 +199,20 @@ h1 {
 
 .set-card {
   display: grid;
+  grid-template-rows: auto auto 1fr;
   min-height: 100%;
+  isolation: isolate;
 }
 
 .set-media {
   display: grid;
   place-items: center;
-  height: 190px;
-  padding: 10px 10px 0;
+  position: relative;
+  z-index: 0;
+  height: 240px;
+  padding: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #faf9ff 100%);
+  overflow: hidden;
 }
 
 .set-media img {
@@ -215,16 +220,19 @@ h1 {
   height: 100%;
   object-fit: contain;
   border-radius: 16px;
+  display: block;
 }
 
 .set-open {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: start;
+  position: relative;
+  z-index: 1;
   width: 100%;
   padding: 18px 18px 10px;
   border: 0;
-  background: transparent;
+  background: var(--surface);
   color: inherit;
   text-align: left;
 }
@@ -258,7 +266,10 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
   gap: 8px;
+  position: relative;
+  z-index: 1;
   padding: 0 14px 14px;
+  background: var(--surface);
 }
 
 .roll-pill,
@@ -352,6 +363,8 @@ h1 {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 10px;
+  position: relative;
+  z-index: 1;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
@@ -604,12 +617,12 @@ h1 {
   }
 
   .set-media {
-    height: 145px;
-    padding: 8px 8px 0;
+    height: 220px;
+    padding: 10px;
   }
 
   .set-open {
-    padding: 12px 14px 8px;
+    padding: 14px 14px 8px;
   }
 
   .set-name {
