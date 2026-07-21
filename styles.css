@@ -48,7 +48,7 @@ button {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 42px 1fr 48px;
+  grid-template-columns: 42px minmax(0, 1fr) 48px;
   align-items: center;
   gap: 10px;
   margin: -12px -12px 12px;
@@ -56,6 +56,10 @@ button {
   border-bottom: 1px solid rgba(236, 234, 241, 0.9);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(18px);
+}
+
+.topbar:has(.back-button[hidden]) {
+  grid-template-columns: minmax(0, 1fr) 46px;
 }
 
 .title-block {
@@ -72,9 +76,9 @@ button {
 
 h1 {
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
   font-size: 24px;
   line-height: 1.16;
   letter-spacing: 0;
@@ -209,7 +213,8 @@ h1 {
   place-items: center;
   position: relative;
   z-index: 0;
-  height: 240px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   padding: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #faf9ff 100%);
   overflow: hidden;
@@ -610,14 +615,16 @@ h1 {
     margin-right: -10px;
     padding-left: 10px;
     padding-right: 10px;
+    gap: 8px;
   }
 
   h1 {
     font-size: 20px;
+    line-height: 1.1;
   }
 
   .set-media {
-    height: 220px;
+    aspect-ratio: 1 / 1;
     padding: 10px;
   }
 
